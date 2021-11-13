@@ -1,15 +1,26 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png" />
-  <HelloWorld msg="Welcome to Your Vue.js App" />
+  <div id="app">
+    <!-- <LoanApp /> -->
+    <!-- <Slider /> -->
+    <!-- <vue-slider v-model="value"></vue-slider> -->
+    <LoanApp />
+  </div>
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld.vue";
+// import HelloWorld from "./components/HelloWorld.vue";
+import LoanApp from "./components/LoanApp.vue";
+// import VueSlider from "vue-slider-component";
+// import "vue-slider-component/theme/default.css";
+// import Slider from "./components/Slider.vue";
+// import Slider2 from "./components/Slider2.vue";
 
 export default {
   name: "App",
   components: {
-    HelloWorld,
+    LoanApp,
+    // VueSlider,
+    // Slider2,
   },
 };
 </script>
