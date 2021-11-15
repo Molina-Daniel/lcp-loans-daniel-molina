@@ -51,23 +51,18 @@ export default {
 </script>
 <style lang="scss" scoped>
 .details-summary {
-  width: 100%;
-  height: auto;
   list-style: none;
-  padding: 0;
-  .details-summary-item {
-    width: 100%;
-  }
-
-  li div {
-    align-items: center;
-  }
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding-inline-start: 0px;
 }
 
-.details-display {
-  width: 100%;
-  height: auto;
-  border-radius: 10px;
-  margin: 30px 0;
+.details-summary-item {
+  font-size: 1rem;
+  flex: 1;
+  margin: 0 1rem;
 }
 </style>

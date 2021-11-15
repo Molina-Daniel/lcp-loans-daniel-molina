@@ -1,11 +1,10 @@
 <template>
+  <Modal v-show="isModalVisible" @close="closeModal" />
   <div id="loan-calculator">
     <div
       class="loan-calculator-container"
       :class="{ showCalculator: !showSummaryDisplay }"
     >
-      <h2>LCP LOANS</h2>
-
       <form id="customer-options">
         <div class="customer-details-wrapper">
           <div class="customer-details">
@@ -20,10 +19,9 @@
               ref="firstname"
               placeholder="Minimum 3 characteres"
               autofocus
+              pattern="[A-Za-z]"
             />
-            <!-- <p v-if="onNameBlur" class="invalidInput">
-              Please, your name has to be at least 3 characteres
-            </p> -->
+            <p v-if="nameNoValid" class="inputRequired">*required</p>
           </div>
 
           <div class="customer-details">
@@ -38,15 +36,14 @@
               ref="lastname"
               placeholder="Minimum 3 characteres"
             />
-            <!-- <p v-if="onSurnameBlur" class="invalidInput">
-              Please, your name has to be at least 3 characteres
-            </p> -->
+            <p v-if="surnameNoValid" class="inputRequired">*required</p>
           </div>
         </div>
 
-        <div>
+        <div class="loan-amount">
           <label>Loan Amount</label>
-          <div class="loan-amount">
+          <p class="increments">(increments of £100)</p>
+          <div>
             <div class="loan-amount-input">
               <span>£</span>
               <input disabled v-model="loanApp.loanAmount" />
@@ -67,6 +64,11 @@
 
         <div class="repayment-period">
           <label>Loan Period</label>
+          <p class="increments">(increments of 6 months)</p>
+          <div class="loan-period-input">
+            <input disabled v-model="loanApp.repaymentPeriod" />
+            <span>months</span>
+          </div>
           <Slider
             v-model="loanApp.repaymentPeriod"
             @change="calcMonthlyTotal"
@@ -78,16 +80,20 @@
         </div>
       </form>
 
-      <QuoteOutput
-        :apr="loanApp.apr"
-        :loan-amount="loanApp.loanAmount"
-        :total-monthly="loanApp.monthlyTotal"
-        :total-amount-repayable="loanApp.totalAmountRepayable"
-        :loan-period="loanApp.repaymentPeriod"
-      />
+      <div class="quote-output">
+        <h2>Quote Output</h2>
+        <QuoteOutput
+          :apr="loanApp.apr"
+          :loan-amount="loanApp.loanAmount"
+          :total-monthly="loanApp.monthlyTotal"
+          :total-amount-repayable="loanApp.totalAmountRepayable"
+          :loan-period="loanApp.repaymentPeriod"
+        />
+      </div>
     </div>
 
-    <div v-if="showSummaryDisplay">
+    <div class="quote-output" v-if="showSummaryDisplay">
+      <h2>Quote Summary</h2>
       <QuoteSummary
         :first-name="loanApp.firstName"
         :last-name="loanApp.lastName"
@@ -102,7 +108,7 @@
 
     <div class="footer">
       <button @click="showQuote()">
-        {{ showSummaryDisplay ? "Loan Calculater" : "Show Summary" }}
+        {{ showSummaryDisplay ? "Back to Loan Calculator" : "Show Summary" }}
       </button>
       <button v-if="!showSummaryDisplay" @click="resetCalc()">Reset</button>
     </div>
@@ -112,6 +118,7 @@
 <script>
 import QuoteOutput from "./QuoteOutput";
 import QuoteSummary from "./QuoteSummary";
+import Modal from "./Modal.vue";
 import Slider from "@vueform/slider";
 
 export default {
@@ -128,16 +135,15 @@ export default {
       },
       showSummaryDisplay: false,
       nameNoValid: null,
-      // onNameBlur: null,
       surnameNoValid: null,
-      // onSurnameBlur: null,
-      // formatter: (v) => `£${("" + v).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`,
+      isModalVisible: false,
     };
   },
   components: {
     Slider,
     QuoteOutput,
     QuoteSummary,
+    Modal,
   },
   methods: {
     showQuote() {
@@ -147,9 +153,15 @@ export default {
         this.surnameNoValid === false
       ) {
         this.showSummaryDisplay = true;
+      } else if (
+        this.showSummaryDisplay === false &&
+        (this.nameNoValid === null ||
+          this.nameNoValid === true ||
+          this.surnameNoValid === null ||
+          this.surnameNoValid === true)
+      ) {
+        this.isModalVisible = true;
       } else {
-        this.nameNoValid = true;
-        this.surnameNoValid = true;
         this.showSummaryDisplay = false;
       }
     },
@@ -171,13 +183,6 @@ export default {
       this.loanApp.monthlyTotal =
         Math.round((monthlyTotal + Number.EPSILON) * 100) / 100;
     },
-    // onNameInputBlur() {
-    //   if (this.loanApp.firstName.trim().length < 3) {
-    //     this.onNameBlur = true;
-    //   } else {
-    //     this.onNameBlur = false;
-    //   }
-    // },
     onNameInputChange() {
       if (this.loanApp.firstName.trim().length < 3) {
         this.nameNoValid = true;
@@ -192,64 +197,96 @@ export default {
         this.surnameNoValid = false;
       }
     },
+    closeModal() {
+      this.isModalVisible = false;
+    },
   },
 };
 </script>
 
 <style src="@vueform/slider/themes/default.css"></style>
-<style lang="scss" scoped>
-.slider-red {
-  --slider-connect-bg: #ef4444;
-  --slider-tooltip-bg: #ef4444;
-  --slider-handle-ring-color: #ef444430;
-}
+<style lang="scss">
 label {
-  display: inline-block;
   margin: 10px 0;
 }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  padding: 1rem 2rem;
+  border: 1px solid #40005d;
+  background-color: #40005d;
+  color: white;
+  border-radius: 12px;
+  margin: 0.1rem auto;
+}
+
 #loan-calculator {
   align-items: center;
   max-width: 900px;
   padding: 30px;
+  padding-top: 0px;
   margin: 0 auto;
-  h2 {
+  h1 {
     font-size: 35px;
     font-weight: bold;
   }
 }
+
+#customer-options {
+  text-align: center;
+  border-radius: 12px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.25);
+  padding: 1rem;
+  padding-bottom: 3rem;
+  background-color: rgb(31, 31, 31);
+  margin: 2rem auto;
+  width: 50rem;
+  max-width: 95%;
+}
+
 .loan-calculator-container {
   width: 100%;
   display: none;
 }
+
 .showCalculator {
   display: block;
 }
 
-#customer-options {
-  height: auto;
-}
 .customer-details {
-  width: 100%;
-  height: 50px;
-  margin-bottom: 65px;
-  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  text-align: left;
   label {
-    margin-bottom: 5px;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    display: block;
   }
   input {
-    width: 100%;
-    height: 50px;
+    font: inherit;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    width: 20rem;
+    max-width: 100%;
   }
 }
 
 .loan-amount {
   width: 100%;
-  margin-bottom: 30px;
+  margin-bottom: 2rem;
+  label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    margin-top: 2rem;
+    display: block;
+  }
   .loan-amount-input {
-    display: flex;
-    height: 50px;
-    align-items: center;
-    box-sizing: border-box;
+    padding: 0.5rem;
+    width: 100%;
   }
   input {
     width: 50px;
@@ -259,36 +296,65 @@ label {
     margin-left: 5px;
   }
 }
+
 .invalidInput {
   border-color: red;
   background: #fbdada;
-}
-.slide-container {
-  width: 75%;
 }
 
 .repayment-period {
   display: block;
   width: 100%;
-  .vue-slider {
-    margin-bottom: 10px;
+  label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    margin-top: 3rem;
+    display: block;
   }
+  .loan-period-input {
+    padding: 0.5rem;
+    width: 100%;
+  }
+  input {
+    width: 30px;
+    height: 40px;
+    margin-right: 10px;
+    display: inline-block;
+    text-align: center;
+  }
+}
+
+.quote-output {
+  background-color: #a892ee;
+  color: black;
+  padding: 1rem;
+  margin: 2rem auto;
+  width: 50rem;
+  max-width: 95%;
+  border-radius: 12px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.25);
+}
+
+.inputRequired {
+  font-size: 0.8rem;
+  color: #ec8282;
+  margin: 0rem;
+}
+
+.slider-red {
+  --slider-connect-bg: #ef4444;
+  --slider-tooltip-bg: #ef4444;
+  --slider-handle-ring-color: #ef444430;
+}
+
+.increments {
+  font-size: 0.7rem;
+  margin: 0rem;
 }
 
 .footer {
   width: 100%;
   display: flex;
-  justify-content: center;
-}
-/* Chrome, Safari, Edge, Opera */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Firefox */
-input[type="number"] {
-  -moz-appearance: textfield;
+  justify-content: space-around;
 }
 </style>
